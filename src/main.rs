@@ -86,20 +86,22 @@ struct UploadDownload {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-
     let args: Vec<String> = std::env::args().collect();
 
-    if args.len() != 2 {
+    if args.len() != 3 {
         println!("Invalid arguments.");
         return Ok(());
     }
 
-    let id: i64 = args[1].parse()?;
+    let games_dir = &args[1];
+    // itch-io-downloader://GAME_ID/
+    let id: i64 = args[2].split("/").collect::<Vec<&str>>()[2].parse()?;
 
+    println!("Games path \"{}\"", games_dir);
     println!("Game {}", id);
 
-    let dir_path = format!("./games/{}", id);
-    let temp_path = format!("./games/temp");
+    let dir_path = format!("{}/{}", games_dir, id);
+    let temp_path = format!("{}/temp", games_dir);
 
 
 

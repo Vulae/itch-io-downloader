@@ -10,7 +10,7 @@ cd /d %1
 :: Add registry keys.
 reg add "HKCR\itch-io-downloader" /f /ve /t REG_SZ /d "URL:itch.io-downloader protocol"
 reg add "HKCR\itch-io-downloader" /f /v "URL Protocol" /t REG_SZ
-reg add "HKCR\itch-io-downloader\Shell\Open\Command" /f /ve /t REG_SZ /d "%~dp0itch-io-downloader.exe %%1"
+reg add "HKCR\itch-io-downloader\Shell\Open\Command" /f /ve /t REG_SZ /d "\"%~dp0/itch-io-downloader.exe\" \"%~dp0games\" \"%%1\""
 
 :: Finished.
 echo "If you ever move the install location, rerun this script."

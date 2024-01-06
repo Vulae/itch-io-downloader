@@ -1,0 +1,25 @@
+{
+    "manifest_version": 3,
+   
+    "name": "Itch.io downloader",
+    "description": "Download & play Itch.io games",
+    "version": "0.0.1",
+
+    "permissions": [
+        "scripting",
+        "tabs"
+    ],
+
+    "host_permissions": [
+        "https://itch.io/*",
+        "https://*.itch.io/*"
+    ],
+
+    "content_scripts": [
+        {
+            "matches": ["https://itch.io/*", "https://*.itch.io/*"],
+            "js": ["./script.js"]
+        }
+    ]
+   
+}
