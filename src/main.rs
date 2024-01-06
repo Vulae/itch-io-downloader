@@ -12,14 +12,12 @@ use zip::ZipArchive;
 
 
 
-static KEY: &str = "eIvxmnmkEmO4INJI9KNRAEVcgxkD3EKJncKulsmN";
-
-fn api_url_game_uploads(id: &i64) -> String {
-    format!("https://itch.io/api/1/{}/game/{}/uploads", KEY, id)
+fn api_url_game_uploads(api_key: &str, id: &i64) -> String {
+    format!("https://itch.io/api/1/{}/game/{}/uploads", api_key, id)
 }
 
-fn api_url_upload_download(id: &i64) -> String {
-    format!("https://itch.io/api/1/{}/upload/{}/download", KEY, id)
+fn api_url_upload_download(api_key: &str, id: &i64) -> String {
+    format!("https://itch.io/api/1/{}/upload/{}/download", api_key, id)
 }
 
 
@@ -93,25 +91,32 @@ async fn main() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
 
-    let games_dir = &args[1];
+    let base_dir = &args[1];
     // itch-io-downloader://GAME_ID/
     let id: i64 = args[2].split("/").collect::<Vec<&str>>()[2].parse()?;
 
-    println!("Games path \"{}\"", games_dir);
+    println!("Base path \"{}\"", base_dir);
     println!("Game {}", id);
 
-    let dir_path = format!("{}/{}", games_dir, id);
-    let temp_path = format!("{}/temp", games_dir);
+
+
+    let api_key_path = format!("{}/api_key.txt", base_dir);
+    let dir_path = format!("{}/games/{}", base_dir, id);
+    let temp_path = format!("{}/games/temp", base_dir);
 
 
 
     // Download game if not already.
     let dir_exists = fs::metadata(&dir_path);
     if !dir_exists.is_ok() || !dir_exists?.is_dir() {
-        println!("Getting game download.");
-
+        
+        // API Key
+        println!("Reading API key.");
+        let api_key = fs::read_to_string(api_key_path)?;
+        
         // Get download URL.
-        let game_uploads_req = reqwest::get(api_url_game_uploads(&id)).await?;
+        println!("Getting game download.");
+        let game_uploads_req = reqwest::get(api_url_game_uploads(&api_key, &id)).await?;
         let mut game_uploads =  game_uploads_req.json::<GameUploads>().await?.uploads;
         game_uploads.sort_by(|a, b| {
             a.id.cmp(&b.id)
@@ -120,7 +125,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .filter(|game_upload| game_upload.p_windows)
             .collect::<Vec<&GameUpload>>().first().unwrap().to_owned();
 
-        let game_download_req = reqwest::get(api_url_upload_download(&game_upload.id)).await?;
+        let game_download_req = reqwest::get(api_url_upload_download(&api_key, &game_upload.id)).await?;
         let game_download = game_download_req.json::<UploadDownload>().await?.url;
 
         // Download ZIP file.
