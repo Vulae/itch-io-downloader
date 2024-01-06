@@ -19,4 +19,4 @@ jobs:
         with:
           TOOLCHAIN_VERSION: 1.72.0
           RUSTTARGET: ${{ matrix.target }}
-          EXTRA_FILES: "README.md LICENSE install.bat"
+          EXTRA_FILES: "README.md LICENSE install.bat addon/manifest.json addon/script.js"
