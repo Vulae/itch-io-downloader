@@ -11,7 +11,10 @@ jobs:
       matrix:
         target: [ x86_64-pc-windows-gnu ]
     steps:
-      - uses: actions/checkout@master
+      - name: Checkout
+        uses: actions/checkout@master
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2.7.0
       - name: Compile & release
         uses: rust-build/rust-build.action@v1.4.3
         env:
