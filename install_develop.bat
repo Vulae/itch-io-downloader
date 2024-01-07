@@ -8,7 +8,7 @@ if not '%errorlevel%' == '0' (
 cd /d %1
 
 :: Add registry keys.
-reg add "HKCR\itch-io-downloader" /f /ve /t REG_SZ /d "URL:itch.io-downloader protocol"
+reg add "HKCR\itch-io-downloader" /f /ve /t REG_SZ /d "URL:itch-io-downloader protocol"
 reg add "HKCR\itch-io-downloader" /f /v "URL Protocol" /t REG_SZ
 reg add "HKCR\itch-io-downloader\Shell\Open\Command" /f /ve /t REG_SZ /d "\"%~dp0target/debug/itch-io-downloader.exe\" \"%~dp0" \"%%1\""
 
