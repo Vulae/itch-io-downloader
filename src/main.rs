@@ -3,25 +3,12 @@ mod game;
 mod library;
 mod config;
 mod api;
+mod utils;
 
-use std::{error::Error, path::PathBuf, io::Read};
+use std::{error::Error, path::PathBuf};
 use config::Config;
 use library::Library;
-
-
-
-fn console_question(question: &str) -> bool {
-    println!("Y/N: {}", question);
-    loop {
-        let mut input = [0];
-        let _ = std::io::stdin().read(&mut input);
-        match input[0] as char {
-            'y' | 'Y' => return true,
-            'n' | 'N' => return false,
-            _ => println!("\"Y\" or \"N\" only."),
-        }
-    }
-}
+use utils::console_question;
 
 
 

@@ -3,8 +3,7 @@ use std::{path::PathBuf, error::Error};
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use tokio::{fs::{self, File}, io::{AsyncWriteExt, AsyncReadExt}};
-use zip::ZipArchive;
-use crate::{game::Game, config::Config, api::{GameUpload, itch_api_game_uploads, itch_api_upload_download}};
+use crate::{game::Game, config::Config, api::{GameUpload, itch_api_game_uploads, itch_api_upload_download}, utils::extract_archive};
 
 
 
@@ -69,7 +68,7 @@ impl Library {
         
         // Download
         let mut temp_path = self.temp_path();
-        temp_path.push(format!("{}.zip", game_id));
+        temp_path.push(&game_upload.filename);
         let mut temp_file = File::create(&temp_path).await?;
         let mut stream = reqwest::get(game_download.url).await?.bytes_stream();
         while let Some(chunk_result) = stream.next().await {
@@ -80,13 +79,10 @@ impl Library {
 
         // Unzip file
         let game_path = self.game_path(game_id);
-        fs::create_dir_all(&game_path).await?;
-        let zip_file = std::fs::File::open(&temp_path)?;
-        let mut archive = ZipArchive::new(zip_file)?;
-        archive.extract(&game_path)?;
+        extract_archive(&temp_path, &game_path).await?;
 
         // Cleanup temp
-        fs::remove_file(temp_path).await?;
+        fs::remove_file(&temp_path).await?;
 
         // Add game json
         let game_info_path = self.game_info_path(game_id);
