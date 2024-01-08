@@ -1,10 +1,27 @@
 
-mod download;
-mod run;
+mod game;
+mod library;
+mod config;
+mod api;
 
-use std::{error::Error, path::PathBuf, fs};
+use std::{error::Error, path::PathBuf, io::Read};
+use config::Config;
+use library::Library;
 
-use crate::{download::download_game, run::run_game};
+
+
+fn console_question(question: &str) -> bool {
+    println!("Y/N: {}", question);
+    loop {
+        let mut input = [0];
+        let _ = std::io::stdin().read(&mut input);
+        match input[0] as char {
+            'y' | 'Y' => return true,
+            'n' | 'N' => return false,
+            _ => println!("\"Y\" or \"N\" only."),
+        }
+    }
+}
 
 
 
@@ -19,41 +36,50 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let base_dir = PathBuf::from(&args[1]);
     // itch-io-downloader://GAME_ID/
-    let id: i64 = args[2].split("/").collect::<Vec<&str>>()[2].parse()?;
+    let game_id: i64 = args[2].split("/").collect::<Vec<&str>>()[2].parse()?;
 
-    println!("Base path \"{}\"", base_dir.to_str().unwrap());
-    println!("Game {}", id);
+    let config = Config::load(base_dir.clone()).await?;
 
+    let mut library_path = PathBuf::from(&config.base_dir);
+    library_path.push("games");
+    let mut library = Library::new(config, library_path);
+    library.create_dirs().await?;
 
+    let game = match library.get_game(game_id).await? {
+        // Game not installed, prompt to install.
+        None => {
+            if console_question("Game is not installed, do you want to install game?") {
+                println!("Downloading game.");
+                Some(library.download_game(game_id).await?)
+            } else {
+                None
+            }
+        },
+        // Game installed, prompt to update if available.
+        Some(mut game) => {
+            println!("Game already installed.");
+            if game.is_latest().await? {
+                Some(game)
+            } else {
+                println!("Do you want to download the latest version of the game? Y/N");
 
-    let mut games_dir = PathBuf::from(&base_dir);
-    games_dir.push("games");
+                if console_question("Do you want to download the latest version of the game?") {
+                    Some(library.download_game(game_id).await?)
+                } else {
+                    Some(game)
+                }
+            }
+        },
+    };
 
-
-
-    // Download game if not already.
-    if {
-        let mut game_dir = PathBuf::from(&games_dir);
-        game_dir.push(id.to_string());
-        !game_dir.exists() && !game_dir.is_dir()
-    } {
-        
-        println!("Reading API key.");
-        let mut api_key_path = PathBuf::from(&base_dir);
-        api_key_path.push("api_key.txt");
-        let api_key = fs::read_to_string(api_key_path)?;
-        
-        download_game(&api_key, &id, &games_dir).await?;
-
-    } else {
-        println!("Game already downloaded.");
+    // Start game
+    match game {
+        Some(mut game) => {
+            println!("Starting game.");
+            game.start().await?;
+        },
+        None => { }
     }
-
-
-
-    run_game(&id, &games_dir).await?;
-
-
 
     Ok(())
 }
