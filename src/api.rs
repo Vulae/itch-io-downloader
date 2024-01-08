@@ -15,7 +15,7 @@ pub struct GameUpload {
     pub position: i64,
 
     pub filename: String,
-    pub size: i64,
+    pub size: Option<i64>,
 
     pub demo: bool,
     pub preorder: bool,
