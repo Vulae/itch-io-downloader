@@ -4,6 +4,55 @@ use serde::Deserialize;
 
 
 #[derive(Deserialize)]
+pub struct GameInfo {
+    pub game: GameInfoGame,
+}
+
+#[derive(Deserialize)]
+pub struct GameInfoGame {
+    pub can_be_bought: bool,
+    pub has_demo: bool,
+    pub p_windows: bool,
+    pub p_linux: bool,
+    pub p_osx: bool,
+    pub p_android: bool,
+    pub min_price: i64,
+    pub url: String,
+    pub in_press_system: bool,
+    pub user: GameUser,
+    pub id: i64,
+    pub r#type: String,
+    pub cover_url: String,
+    pub classification: String,
+    pub created_at: String,
+    pub published_at: String,
+    pub title: String,
+    pub short_text: String,
+}
+
+#[derive(Deserialize)]
+pub struct GameEmbed {
+    pub width: i64,
+    pub height: i64,
+    pub fullscreen: bool,
+}
+
+#[derive(Deserialize)]
+pub struct GameUser {
+    pub username: String,
+    pub url: String,
+    pub id: i64,
+    pub cover_url: Option<String>,
+}
+
+pub async fn itch_api_game_info(api_key: &str, game_id: &i64) -> Result<GameInfo, Box<dyn Error>> {
+    let url = format!("https://itch.io/api/1/{}/game/{}", api_key, game_id);
+    Ok(reqwest::get(url).await?.json::<GameInfo>().await?)
+}
+
+
+
+#[derive(Deserialize)]
 pub struct GameUploads {
     pub uploads: Vec<GameUpload>,
 }
