@@ -29,41 +29,45 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut library_path = PathBuf::from(&config.base_dir);
     library_path.push("games");
-    let mut library = Library::new(config, library_path);
-    library.create_dirs().await?;
+    let mut library = Library::load(config).await?;
 
-    let game = match library.get_game(game_id).await? {
+
+
+    let game = match library.get_game(&game_id) {
         // Game not installed, prompt to install.
         None => {
             if console_question("Game is not installed, do you want to install game?") {
                 println!("Downloading game.");
-                Some(library.download_game(game_id).await?)
+                library.download_game(game_id).await?;
+                library.get_game(&game_id)
             } else {
                 None
             }
         },
         // Game installed, prompt to update if available.
-        Some(mut game) => {
+        Some(game) => {
             println!("Game already installed.");
-            if game.is_latest().await? {
+            if game.clone().is_latest().await? {
                 Some(game)
             } else {
                 println!("Do you want to download the latest version of the game? Y/N");
 
                 if console_question("Do you want to download the latest version of the game?") {
-                    Some(library.download_game(game_id).await?)
-                } else {
-                    Some(game)
+                    library.download_game(game_id).await?;
                 }
+                
+                library.get_game(&game_id)
             }
         },
     };
 
+
+    
     // Start game
     match game {
-        Some(mut game) => {
+        Some(game) => {
             println!("Starting game.");
-            game.start().await?;
+            game.clone().start().await?;
         },
         None => { }
     }

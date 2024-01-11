@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use std::{path::PathBuf, error::Error};
+use serde::{Deserialize, Serialize};
 use tokio::{fs, process::Command};
 
 use crate::{config::Config, api::{itch_api_game_uploads, GameUpload}};
@@ -13,21 +14,57 @@ static SEARCH_BLACKLIST: &'static [&'static str] = &[
 
 
 
-#[derive(Debug)]
+#[derive(Deserialize, Serialize)]
+pub struct GameJson {
+    pub game_id: i64,
+    pub upload_id: i64,
+    pub title: String,
+    pub description: String,
+    pub url: String,
+    pub directory: String,
+}
+
+
+
+#[derive(Debug, Clone)]
 pub struct Game {
-    config: Config,
-    path: PathBuf,
-    game_id: i64,
-    upload_id: i64,
+    pub config: Config,
+    pub game_id: i64,
+    pub upload_id: i64,
+    pub title: String,
+    pub description: String,
+    pub url: String,
+    pub directory: String,
 }
 
 
 
 impl Game {
 
-    pub fn new(config: Config, path: PathBuf, id: i64, version: i64) -> Self {
-        Self { config, path, game_id: id, upload_id: version }
+    pub fn new(config: Config, game_json: &GameJson) -> Self {
+        Self {
+            config,
+            game_id: game_json.game_id,
+            upload_id: game_json.upload_id,
+            title: game_json.title.clone(),
+            description: game_json.description.clone(),
+            url: game_json.url.clone(),
+            directory: game_json.directory.clone()
+        }
     }
+
+    pub fn json(&mut self) -> GameJson {
+        GameJson {
+            game_id: self.game_id,
+            upload_id: self.upload_id,
+            title: self.title.clone(),
+            description: self.description.clone(),
+            url: self.url.clone(),
+            directory: self.directory.clone(),
+        }
+    }
+
+
 
     pub async fn is_latest(&mut self) -> Result<bool, Box<dyn Error>> {
         let mut game_uploads = itch_api_game_uploads(&self.config.api_key, &self.game_id).await?.uploads;
@@ -69,7 +106,10 @@ impl Game {
             Ok(None)
         }
 
-        let executable_path = search_exe(PathBuf::from(&self.path))?;
+        let mut search_path = PathBuf::from(&self.config.base_dir);
+        search_path.push("games");
+        search_path.push(&self.directory);
+        let executable_path = search_exe(search_path)?;
 
         if executable_path.is_some() {
             let full_path = fs::canonicalize(executable_path.unwrap()).await?;
