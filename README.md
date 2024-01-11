@@ -21,4 +21,4 @@ Adds a button on itch.io games to download & play.
 
 1. Clone repo
 2. Do installation process above but run `install_develop.bat` instead of `install.bat`
-3. run `cargo build` for developer build
+3. run `cargo run -- "path/to/itch-io-downloader" "itch-io-downloader://GAME_ID"`
