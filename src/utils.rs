@@ -1,21 +1,6 @@
 
-use std::{path::PathBuf, error::Error, io::Read};
+use std::{path::PathBuf, error::Error};
 use tokio::{process::Command, fs};
-
-
-
-pub fn console_question(question: &str) -> bool {
-    println!("Y/N: {}", question);
-    loop {
-        let mut input = [0];
-        let _ = std::io::stdin().read(&mut input);
-        match input[0] as char {
-            'y' | 'Y' => return true,
-            'n' | 'N' => return false,
-            _ => println!("\"Y\" or \"N\" only."),
-        }
-    }
-}
 
 
 
