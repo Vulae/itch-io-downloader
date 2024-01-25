@@ -1,9 +1,10 @@
 
-use std::{path::PathBuf, error::Error};
-use futures::StreamExt;
+use std::{error::Error, fmt::Write, path::PathBuf};
+use console::style;
+use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use serde::{Deserialize, Serialize};
-use tokio::{fs::{self, File}, io::AsyncWriteExt};
-use crate::{game::{Game, GameJson}, config::Config, api::{GameUpload, itch_api_game_uploads, itch_api_upload_download, itch_api_game_info}, utils::extract_archive};
+use tokio::{fs, io::AsyncWriteExt};
+use crate::{game::{Game, GameJson}, config::Config, api::{GameUpload, itch_api_game_uploads, itch_api_upload_download, itch_api_game_info}, utils::{download_file, extract_archive}};
 
 
 
@@ -83,6 +84,8 @@ impl Library {
 
 
     pub async fn download_game(&mut self, game_id: i64) -> Result<(), Box<dyn Error>> {
+        println!("    {}", style("Getting game info").magenta());
+
         // Get game info.
         let game_info = itch_api_game_info(&self.config.api_key, &game_id).await?.game;
         if game_info.id != game_id {
@@ -100,21 +103,27 @@ impl Library {
 
         // Upload link to download.
         let game_download = itch_api_upload_download(&self.config.api_key, &game_upload.id).await?;
-        
+
         // Download game.
+        println!("    {}", style("Initializing download").magenta());
         let mut temp_path = PathBuf::from(&self.config.base_dir);
         temp_path.push("games/temp");
-        fs::create_dir_all(&temp_path).await?;
         temp_path.push(&game_upload.filename);
-        let mut temp_file = File::create(&temp_path).await?;
-        let mut stream = reqwest::get(game_download.url).await?.bytes_stream();
-        while let Some(chunk_result) = stream.next().await {
-            let chunk = chunk_result?;
-            temp_file.write_all(&chunk).await?;
-        }
-        temp_file.flush().await?;
+
+        let progress_bar = ProgressBar::new(0);
+        progress_bar.set_style(ProgressStyle::with_template("    {msg:.magenta} {spinner:.cyan} [{elapsed_precise:.cyan}] [{bar:20.magenta/cyan}] {bytes:.cyan}/{total_bytes:.cyan} ({eta:.cyan})")
+            .unwrap()
+            .with_key("eta", |state: &ProgressState, w: &mut dyn Write| write!(w, "{:.1}s", state.eta().as_secs_f64()).unwrap())
+            .progress_chars("#>-"));
+        progress_bar.set_message("Downloading");
+
+        download_file(game_download.url, &temp_path, |total_size, current_size| {
+            progress_bar.set_position(current_size);
+            progress_bar.set_length(total_size);
+        }).await?;
 
         // Extract game archive.
+        println!("    {}", style("Extracting game").magenta());
         let mut games_path = PathBuf::from(&self.config.base_dir);
         games_path.push("games");
         let mut game_path = PathBuf::from(&games_path);
@@ -122,6 +131,7 @@ impl Library {
         extract_archive(&temp_path, &game_path).await?;
 
         // Cleanup temp
+        println!("    {}", style("Finishing installation").magenta());
         fs::remove_file(&temp_path).await?;
 
         // Add game to self
