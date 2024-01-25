@@ -66,7 +66,25 @@ impl Game {
 
 
 
+    pub async fn is_downloaded(&mut self) -> Result<bool, Box<dyn Error>> {
+        let mut game_path = PathBuf::from(&self.config.base_dir);
+        game_path.push("games");
+        game_path.push(&self.directory);
+
+        if !fs::try_exists(&game_path).await? {
+            return Ok(false);
+        }
+
+        let meta = fs::metadata(&game_path).await?;
+
+        Ok(meta.is_dir())
+    }
+
     pub async fn is_latest(&mut self) -> Result<bool, Box<dyn Error>> {
+        if !self.is_downloaded().await? {
+            return Ok(false);
+        }
+
         let mut game_uploads = itch_api_game_uploads(&self.config.api_key, &self.game_id).await?.uploads;
         game_uploads.sort_by(|a, b| {
             a.id.cmp(&b.id)
