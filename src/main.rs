@@ -132,7 +132,6 @@ struct Args {
 async fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
 
-    println!();
     println!("{} {}", style("itch-io-downloader").magenta(), style(env!("CARGO_PKG_VERSION")).cyan());
 
     let base_dir = PathBuf::from(&args.library_path);
@@ -152,8 +151,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
             display_help();
         },
     };
-
-    println!();
 
     Ok(())
 }
