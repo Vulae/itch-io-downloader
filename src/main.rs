@@ -10,6 +10,7 @@ use config::Config;
 use dialoguer::{Select, Confirm};
 use library::Library;
 use console::style;
+use clap::Parser;
 
 
 
@@ -87,54 +88,70 @@ async fn select_and_play(config: Config) -> Result<(), Box<dyn Error>> {
 
     let selection = Select::new()
         .report(false)
+        .item(format!("{}", style("none").magenta()))
         .items(&(library.games.iter().map(|game| {
-            format!("{}", style(game.title.clone()).magenta())
+            format!("{}", style(game.title.clone()).magenta().bright())
         }).collect::<Vec<String>>()))
         .default(0)
         .interact()?;
 
-    download_and_execute(config.clone(), library.games[selection].game_id).await?;
+    if selection == 0 {
+        println!("{}", style("No game selected").magenta());
+        return Ok(());
+    }
+
+    download_and_execute(config.clone(), library.games[selection - 1].game_id).await?;
 
     Ok(())
 }
 
 
 
+fn display_help() {
+    println!("{}", style("Invalid arguments").black().on_red());
+    println!("For help use {}", style("itch-io-downloader.exe --help").bold());
+}
+
+
+
+/// Itch.io downloader
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Path to game library
+    #[arg(index = 1)]
+    library_path: String,
+    /// The URL protocol program uses
+    #[arg(index = 2)]
+    url_protocol: String,
+}
+
+
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let args: Vec<String> = std::env::args().collect();
-
-    // itch-io-downloader.exe "path/to/install/location" "URL PROTOCOL"
-
-    if args.len() != 3 {
-        println!("{}", style("Invalid arguments.").black().on_red());
-        return Ok(());
-    }
+    let args = Args::parse();
 
     println!();
     println!("{} {}", style("itch-io-downloader").magenta(), style(env!("CARGO_PKG_VERSION")).cyan());
 
-    let base_dir = PathBuf::from(&args[1]);
+    let base_dir = PathBuf::from(&args.library_path);
 
-    let config = Config::load(base_dir.clone()).await?;
-
-    // itch-io-downloader://
-    let url_protocol = &args[2];
+    let config = Config::load(base_dir).await?;
 
     // itch-io-downloader://
-    match url_protocol.split("/").filter(|s| !s.is_empty()).collect::<Vec<&str>>()[..] {
+    match args.url_protocol.split("/").filter(|s| !s.is_empty()).collect::<Vec<&str>>()[..] {
         ["itch-io-downloader:", "play"] => {
             select_and_play(config).await?;
-            ()
         },
         ["itch-io-downloader:", "play", game_id_str] => {
             let game_id: i64 = game_id_str.parse()?;
             download_and_execute(config, game_id).await?;
-            ()
         },
-        [_] => { },
-        _ => { },
-    }
+        _ => {
+            display_help();
+        },
+    };
 
     println!();
 
