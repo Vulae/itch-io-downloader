@@ -27,7 +27,7 @@ pub struct GameInfoGame {
     pub created_at: String,
     pub published_at: String,
     pub title: String,
-    pub short_text: String,
+    pub short_text: Option<String>,
 }
 
 #[derive(Deserialize)]
