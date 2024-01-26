@@ -100,6 +100,7 @@ impl Library {
         let game_upload = game_uploads.iter()
             .filter(|game_upload| game_upload.p_windows)
             .collect::<Vec<&GameUpload>>().first().unwrap().to_owned();
+        println!("    {} {}", style("File to download").magenta(), style(&game_upload.filename).magenta().bold());
 
         // Upload link to download.
         let game_download = itch_api_upload_download(&self.config.api_key, &game_upload.id).await?;
@@ -139,7 +140,7 @@ impl Library {
             game_id: game_info.id,
             upload_id: game_upload.id,
             title: game_info.title,
-            description: game_info.short_text,
+            description: game_info.short_text.unwrap_or("No description".into()),
             url: game_info.url,
             directory: game_path.strip_prefix(&games_path)?.to_str().unwrap().into(),
         }));
