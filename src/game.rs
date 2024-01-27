@@ -174,8 +174,10 @@ fn find_executable(path: PathBuf) -> Result<Option<PathBuf>, Box<dyn Error>> {
 
             executables.sort_by(|a, b| {
                 // Use x64 executables over x32
-                if a.file_name().to_str().unwrap().contains("64") { return std::cmp::Ordering::Greater; }
-                if b.file_name().to_str().unwrap().contains("64") { return std::cmp::Ordering::Less; }
+                if a.file_name().to_str().unwrap().contains("64") { return std::cmp::Ordering::Less; }
+                if b.file_name().to_str().unwrap().contains("64") { return std::cmp::Ordering::Greater; }
+                if a.file_name().to_str().unwrap().contains("32") { return std::cmp::Ordering::Greater; }
+                if b.file_name().to_str().unwrap().contains("32") { return std::cmp::Ordering::Less; }
                 
                 // Otherwise biggest is probably the correct executable
                 let a_meta = a.metadata().unwrap();
