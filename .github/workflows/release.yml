@@ -13,8 +13,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@master
 
-      - name: Install Compilation Target
-        run: rustup target add x86_64-pc-windows-gnu
+      - name: Install Rust Toolchain
+        run: | 
+            rustup target add x86_64-pc-windows-gnu
+            rustup toolchain install stable-x86_64-pc-windows-gnu
+            rustup default stable-x86_64-pc-windows-gnu
 
       - name: Compile
         run: cargo build --release --verbose --target x86_64-pc-windows-gnu
