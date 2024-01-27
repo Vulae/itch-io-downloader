@@ -13,16 +13,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@master
 
-      - name: Setup Rust Toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          target: x86_64-pc-windows-gnu
-
       - name: Use Cache
         uses: actions/cache@v4
         with:
           path: target/
           key: TEST_KEY
+
+      - name: Setup MinGW
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          platform: x64
+
+      - name: Setup Rust Toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: x86_64-pc-windows-gnu
 
       - name: Compile
         run: cargo build --release --verbose --target x86_64-pc-windows-gnu
