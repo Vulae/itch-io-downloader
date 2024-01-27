@@ -1,23 +1,37 @@
-on:
-  release:
-    types: [ created ]
+
+name: Release
+on: workflow_dispatch
+
 jobs:
+
   release:
-    name: release ${{ matrix.target }}
+    name: Release
     runs-on: ubuntu-latest
     permissions: write-all
-    strategy:
-      fail-fast: false
-      matrix:
-        target: [ x86_64-pc-windows-gnu ]
+
     steps:
       - name: Checkout
         uses: actions/checkout@master
-      - name: Compile & release
-        uses: rust-build/rust-build.action@v1.4.3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Compilation Target
+        run: rustup target add x86_64-pc-windows-gnu
+
+      - name: Compile
+        run: cargo build --release --verbose --target x86_64-pc-windows-gnu
+
+      - name: Archive Folder
+        uses: vimtor/action-zip@v1
         with:
-          TOOLCHAIN_VERSION: 1.72.0
-          RUSTTARGET: ${{ matrix.target }}
-          EXTRA_FILES: "README.md LICENSE install.bat addon/manifest.json addon/script.js"
+          files: README.md LICENSE install.bat target/release/itch-io-downloader.exe addon/
+          recursive: false
+          dest: itch-io-downloader-x86_64-windows.zip
+
+      - name: Get Previous Tag
+        id: previoustag
+        uses: WyriHaximus/github-action-get-previous-tag@v1
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "itch-io-downloader-x86_64-windows.zip"
+          tag: ${{ steps.previoustag.outputs.tag }}
