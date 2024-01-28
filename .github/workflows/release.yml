@@ -54,16 +54,11 @@ jobs:
           recursive: false
           dest: itch-io-downloader-x86_64-windows.zip
 
-      - name: Get Latest Release Info
-        id: latest_release_info
-        uses: jossef/action-latest-release-info@v1.2.2
-
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
+      - name: Upload to Latest Release
+        uses: xresloader/upload-to-github-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.latest_release_info.outputs.upload_url }}
-          asset_path: ./itch-io-downloader-${{ matrix.target }}.zip
-          asset_name: itch-io-downloader-${{ matrix.target }}.zip
-          asset_content_type: application/zip
+          file: "./itch-io-downloader-${{ matrix.target }}.zip"
+          update_latest_release: true
+          overwrite: true
