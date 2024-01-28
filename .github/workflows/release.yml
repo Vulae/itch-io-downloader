@@ -9,21 +9,32 @@ jobs:
     runs-on: ubuntu-latest
     permissions: write-all
 
+    strategy:
+      matrix:
+        target: [x86_64-pc-windows-gnu]
+
     steps:
       - name: Checkout
         uses: actions/checkout@master
 
-      - name: Use Cache
+      - name: Cache Rust dependencies
         uses: actions/cache@v4
         with:
-          path: target/
-          key: TEST_KEY
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Install Compilation Target
-        run: rustup target add x86_64-pc-windows-gnu
+      - name: Install Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
 
       - name: Compile
-        run: cargo build --release --verbose --target x86_64-pc-windows-gnu
+        run: cargo build --release --target ${{ matrix.target }}
 
       - name: Archive Folder
         uses: vimtor/action-zip@v1
