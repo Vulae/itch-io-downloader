@@ -49,7 +49,7 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }}
 
       - name: Move Compiled Executable
-        run: cp target/${{ matrix.target }}/release/itch-io-downloader.exe /
+        run: cp ./target/${{ matrix.target }}/release/itch-io-downloader.exe ./itch-io-downloader.exe
 
       - name: Archive Folder
         uses: vimtor/action-zip@v1
