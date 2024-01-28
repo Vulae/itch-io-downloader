@@ -11,7 +11,10 @@ jobs:
 
     strategy:
       matrix:
-        target: [x86_64-pc-windows-gnu]
+        target: [ x86_64-pc-windows-gnu ]
+        linker_bin: [ x86_64-w64-mingw32-gcc ]
+        linker_lib: [ x86_64-w64-mingw32 ]
+        linker_package: [ gcc-mingw-w64-x86-64 ]
 
     steps:
       - name: Checkout
@@ -19,16 +22,17 @@ jobs:
 
       - name: Cache Rust Toolchain and Linker
         uses: actions/cache@v4
+        id: cache
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
             target
-            /usr/bin/x86_64-w64-mingw32-gcc
-            /usr/lib/gcc/x86_64-w64-mingw32
-            /usr/x86_64-w64-mingw32/lib
-            /usr/x86_64-w64-mingw32/include
-            ~/.rustup/toolchains/*-x86_64-pc-windows-gnu
+            /usr/bin/${{ matrix.linker_bin }}
+            /usr/lib/gcc/${{ matrix.linker_lib }}
+            /usr/${{ matrix.linker_lib }}/lib
+            /usr/${{ matrix.linker_lib }}/include
+            ~/.rustup/toolchains
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           save-always: true
 
@@ -40,9 +44,11 @@ jobs:
           override: true
 
       - name: Install mingw-w64 linker
-        run: sudo apt-get install -y gcc-mingw-w64-x86-64
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: sudo apt-get install -y ${{ matrix.linker_package }}
 
-      - name: Set Rust target
+      - name: Install Rust Target
+        if: steps.cache.outputs.cache-hit != 'true'
         run: rustup target add ${{ matrix.target }}
 
       - name: Compile
