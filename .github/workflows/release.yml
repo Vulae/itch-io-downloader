@@ -54,19 +54,16 @@ jobs:
           recursive: false
           dest: itch-io-downloader-x86_64-windows.zip
 
-      - name: Get Last Release URL
-        id: get_last_release
-        run: |
-            url=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/releases | jq '.latest.upload_url' | tr -d '"')
-            echo "Last release URL: $url"
-            echo "::set-output name=last_release_url::$url"
+      - name: Get Latest Release Info
+        id: latest_release_info
+        uses: jossef/action-latest-release-info@v1.2.2
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.get_last_release.outputs.last_release_url }}
+          upload_url: ${{ steps.latest_release_info.outputs.upload_url }}
           asset_path: ./itch-io-downloader-${{ matrix.target }}.zip
           asset_name: itch-io-downloader-${{ matrix.target }}.zip
           asset_content_type: application/zip
