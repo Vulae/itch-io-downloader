@@ -52,13 +52,13 @@ jobs:
         with:
           files: README.md LICENSE install.bat target/release/itch-io-downloader.exe addon/
           recursive: false
-          dest: itch-io-downloader-x86_64-windows.zip
+          dest: itch-io-downloader-${{ matrix.target }}.zip
 
       - name: Upload to Latest Release
         uses: xresloader/upload-to-github-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          file: "./itch-io-downloader-${{ matrix.target }}.zip"
+          file: "itch-io-downloader-${{ matrix.target }}.zip"
           update_latest_release: true
           overwrite: true
