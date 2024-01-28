@@ -17,13 +17,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@master
 
-      - name: Cache Rust dependencies
+      - name: Cache Rust Toolchain and Linker
         uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
             target
+            /usr/bin/x86_64-w64-mingw32-gcc
+            /usr/lib/gcc/x86_64-w64-mingw32
+            /usr/x86_64-w64-mingw32/lib
+            /usr/x86_64-w64-mingw32/include
+            ~/.rustup/toolchains/*-x86_64-pc-windows-gnu
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install Rust Toolchain
@@ -32,6 +37,12 @@ jobs:
           toolchain: stable
           target: ${{ matrix.target }}
           override: true
+
+      - name: Install mingw-w64 linker
+        run: sudo apt-get install -y gcc-mingw-w64-x86-64
+
+      - name: Set Rust target
+        run: rustup target add ${{ matrix.target }}
 
       - name: Compile
         run: cargo build --release --target ${{ matrix.target }}
