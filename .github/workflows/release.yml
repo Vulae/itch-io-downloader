@@ -51,10 +51,13 @@ jobs:
       - name: Move Compiled Executable
         run: cp ./target/${{ matrix.target }}/release/itch-io-downloader.exe ./itch-io-downloader.exe
 
+      - name: Add api_key.txt PlaceHolder
+        run: echo "PUT ITCH.IO API KEY HERE" > api_key.txt
+
       - name: Archive Folder
         uses: vimtor/action-zip@v1
         with:
-          files: README.md LICENSE install.bat itch-io-downloader.exe addon/
+          files: README.md LICENSE install.bat itch-io-downloader.exe api_key.txt addon/
           recursive: false
           dest: itch-io-downloader-${{ matrix.target }}.zip
 
