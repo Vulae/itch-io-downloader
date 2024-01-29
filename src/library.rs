@@ -4,7 +4,7 @@ use console::style;
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use serde::{Deserialize, Serialize};
 use tokio::{fs, io::AsyncWriteExt};
-use crate::{game::{Game, GameJson}, config::Config, api::{GameUpload, itch_api_game_uploads, itch_api_upload_download, itch_api_game_info}, utils::{download_file, extract_archive}};
+use crate::{api::{GameUpload, itch_api_game_uploads, itch_api_upload_download, itch_api_game_info}, config::Config, download::download, game::{Game, GameJson}, utils::extract_archive};
 
 
 
@@ -73,12 +73,15 @@ impl Library {
     }
 
     pub fn set_game(&mut self, game: &Game) {
+        self.remove_game(game);
+        self.games.push(game.clone());
+    }
+
+    pub fn remove_game(&mut self, game: &Game) {
         match self.games.iter().enumerate().find(|(_, g)| { g.game_id.eq(&game.game_id) }) {
             Some((i, _)) => { self.games.remove(i); },
             _ => { },
         }
-
-        self.games.push(game.clone());
     }
 
 
@@ -98,7 +101,16 @@ impl Library {
             a.id.cmp(&b.id)
         });
         let game_upload = game_uploads.iter()
-            .filter(|game_upload| game_upload.p_windows)
+            .filter(|game_upload| {
+                if !game_upload.p_windows { return false; }
+                match &game_upload.host {
+                    Some(host) => {
+                        host == "mega.nz" ||
+                        host == "mega.co.nz"
+                    },
+                    None => true
+                }
+            })
             .collect::<Vec<&GameUpload>>().first().unwrap().to_owned();
         println!("    {} {}", style("File to download").magenta(), style(&game_upload.filename).magenta().bold());
 
@@ -118,7 +130,7 @@ impl Library {
             .progress_chars("#>-"));
         progress_bar.set_message("Downloading");
 
-        download_file(game_download.url, &temp_path, |total_size, current_size| {
+        download(game_download.url, &temp_path, |total_size, current_size| {
             progress_bar.set_position(current_size);
             progress_bar.set_length(total_size);
         }).await?;
@@ -150,6 +162,27 @@ impl Library {
 
         Ok(())
     }
+
+    // pub async fn delete_game(&mut self, game_id: i64) -> Result<(), Box<dyn Error>> {
+
+    //     let game = self.get_game(&game_id);
+    //     if game.is_none() {
+    //         return Ok(());
+    //     }
+    //     let game = game.unwrap();
+
+    //     println!("    {}", style("Deleting game").magenta());
+    //     let mut game_path = PathBuf::from(&game.config.base_dir);
+    //     game_path.push("games");
+    //     game_path.push(&game.directory);
+
+    //     fs::remove_dir_all(game_path).await?;
+
+    //     self.remove_game(game);
+    //     self.save().await?;
+
+    //     Ok(())
+    // }
 
 }
 

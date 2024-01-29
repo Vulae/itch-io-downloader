@@ -4,6 +4,7 @@ mod library;
 mod config;
 mod api;
 mod utils;
+mod download;
 
 use std::{error::Error, path::PathBuf};
 use config::Config;

@@ -70,6 +70,7 @@ pub struct GameUpload {
     pub preorder: bool,
 
     pub storage: String,
+    pub host: Option<String>,
 
     pub created_at: String,
     pub updated_at: String,
