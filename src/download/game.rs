@@ -3,8 +3,7 @@
 use std::{error::Error, fs::DirEntry, path::PathBuf};
 use serde::{Deserialize, Serialize};
 use tokio::{fs, process::Command};
-
-use crate::{config::Config, api::{itch_api_game_uploads, GameUpload}};
+use super::{api::{itch_api_game_uploads, GameUpload}, config::Config};
 
 
 

@@ -4,7 +4,9 @@ use console::style;
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use serde::{Deserialize, Serialize};
 use tokio::{fs, io::AsyncWriteExt};
-use crate::{api::{GameUpload, itch_api_game_uploads, itch_api_upload_download, itch_api_game_info}, config::Config, download::download, game::{Game, GameJson}, utils::extract_archive};
+use crate::download::{api::{itch_api_game_info, itch_api_game_uploads, itch_api_upload_download, GameUpload}, downloader::download, utils::extract_archive};
+
+use super::{config::Config, game::{Game, GameJson}};
 
 
 
