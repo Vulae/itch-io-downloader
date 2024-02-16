@@ -60,8 +60,7 @@ impl Game {
 
 
     pub async fn is_downloaded(&mut self) -> Result<bool, Box<dyn Error>> {
-        let mut game_path = PathBuf::from(&self.config.base_dir);
-        game_path.push("games");
+        let mut game_path = PathBuf::from(&self.config.games_dir);
         game_path.push(&self.directory);
 
         if !fs::try_exists(&game_path).await? {
@@ -91,8 +90,7 @@ impl Game {
 
     pub async fn start(&mut self) -> Result<(), Box<dyn Error>> {
 
-        let mut search_path = PathBuf::from(&self.config.base_dir);
-        search_path.push("games");
+        let mut search_path = PathBuf::from(&self.config.games_dir);
         search_path.push(&self.directory);
         let executable_path = find_executable(search_path)?;
 

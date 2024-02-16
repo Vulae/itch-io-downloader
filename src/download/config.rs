@@ -1,27 +1,47 @@
 
 use std::{error::Error, path::PathBuf};
+use serde::{Deserialize, Serialize};
 use tokio::fs;
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Config {
-    pub base_dir: PathBuf,
+    pub games_dir: PathBuf,
     pub api_key: String,
 }
 
 impl Config {
 
-    pub fn new(base_dir: PathBuf, api_key: String) -> Self {
-        Self { base_dir, api_key }
+    fn base_dir() -> Result<PathBuf, Box<dyn Error>> {
+        let mut base_dir = std::env::current_exe()?;
+        base_dir.pop();
+        if cfg!(debug_assertions) {
+            base_dir.pop();
+            base_dir.pop();
+        }
+        Ok(base_dir)
     }
 
-    pub async fn load(base_dir: PathBuf) -> Result<Self, Box<dyn Error>> {
-        let mut api_key_path = PathBuf::from(&base_dir);
-        api_key_path.push("api_key.txt");
-        let api_key = fs::read_to_string(api_key_path).await?;
+    pub async fn load_from_file(file: PathBuf) -> Result<Self, Box<dyn Error>> {
+        let mut config: Config = serde_json::from_str(&fs::read_to_string(file).await?)?;
 
-        Ok(Self::new(base_dir, api_key))
+        // Fix config paths
+        if !config.games_dir.has_root() {
+            let mut new_games_dir = Self::base_dir()?;
+            new_games_dir.push(&config.games_dir);
+            config.games_dir = new_games_dir;
+        }
+
+        Ok(config)
+    }
+
+    pub async fn load() -> Result<Self, Box<dyn Error>> {
+        // Locate the config file.
+        let mut config_location = Self::base_dir()?;
+        config_location.push("itch-io-downloader.json");
+
+        Ok(Self::load_from_file(config_location).await?)
     }
 
 }

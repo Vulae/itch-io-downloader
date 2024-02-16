@@ -32,23 +32,13 @@ enum Commands {
 
 
 
-async fn get_config() -> Result<Config, Box<dyn Error>> {
-    // TODO: Clean up.
-    let mut base_dir = std::env::current_exe()?;
-    base_dir = base_dir.parent().unwrap().to_path_buf();
-    if cfg!(debug_assertions) {
-        base_dir = base_dir.parent().unwrap().parent().unwrap().to_path_buf();
-    }
-    Ok(Config::load(base_dir).await?)
-}
-
 async fn play(game_id: i64) -> Result<(), Box<dyn Error>> {
-    download_and_execute(get_config().await?, game_id).await?;
+    download_and_execute(Config::load().await?, game_id).await?;
     Ok(())
 }
 
 async fn select_play() -> Result<(), Box<dyn Error>> {
-    select_and_play(get_config().await?).await?;
+    select_and_play(Config::load().await?).await?;
     Ok(())
 }
 

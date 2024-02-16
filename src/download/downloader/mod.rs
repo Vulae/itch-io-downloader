@@ -1,6 +1,5 @@
 use std::{error::Error, path::PathBuf};
 use reqwest::IntoUrl;
-
 use self::{download_mega::download_mega, download_static::download_static};
 
 mod download_static;
@@ -8,6 +7,7 @@ mod download_mega;
 
 
 
+#[allow(dead_code, unreachable_code)]
 pub async fn download<U, F>(url: U, output: &PathBuf, on_progress: F) -> Result<(), Box<dyn Error>>
 where
     U: IntoUrl,
@@ -21,7 +21,7 @@ where
     match url.domain() {
         Some("mega.nz") | Some("mega.co.nz") => {
             panic!("Mega download W.I.P.");
-            // download_mega(url, output, on_progress).await?;
+            download_mega(url, output, on_progress).await?;
         },
         // Assume everything else is just static.
         Some(_) => {

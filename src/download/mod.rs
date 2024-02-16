@@ -1,5 +1,5 @@
 
-use std::{error::Error, path::PathBuf};
+use std::error::Error;
 use console::style;
 use dialoguer::{Confirm, Select};
 
@@ -15,8 +15,6 @@ mod downloader;
 
 
 async fn get_library(config: Config) -> Result<Library, Box<dyn Error>> {
-    let mut library_path = PathBuf::from(&config.base_dir);
-    library_path.push("games");
     Ok(Library::load(config).await?)
 }
 

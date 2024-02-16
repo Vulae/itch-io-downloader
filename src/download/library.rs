@@ -43,8 +43,7 @@ impl Library {
     }
 
     pub async fn load(config: Config) -> Result<Library, Box<dyn Error>> {
-        let mut games_path = PathBuf::from(&config.base_dir);
-        games_path.push("games");
+        let games_path = PathBuf::from(&config.games_dir);
         fs::create_dir_all(&games_path).await?;
 
         let mut library_info_path = PathBuf::from(&games_path);
@@ -59,8 +58,8 @@ impl Library {
     }
 
     pub async fn save(&mut self) -> Result<(), Box<dyn Error>> {
-        let mut library_info_path = PathBuf::from(&self.config.base_dir);
-        library_info_path.push("games/library_info.json");
+        let mut library_info_path = PathBuf::from(&self.config.games_dir);
+        library_info_path.push("library_info.json");
         let mut library_info_file = fs::File::create(library_info_path).await?;
         library_info_file.write(serde_json::to_string_pretty::<LibraryJson>(&self.json())?.as_bytes()).await?;
         library_info_file.flush().await?;
@@ -121,8 +120,8 @@ impl Library {
 
         // Download game.
         println!("    {}", style("Initializing download").magenta());
-        let mut temp_path = PathBuf::from(&self.config.base_dir);
-        temp_path.push("games/temp");
+        let mut temp_path = PathBuf::from(&self.config.games_dir);
+        temp_path.push("temp");
         temp_path.push(&game_upload.filename);
 
         let progress_bar = ProgressBar::new(0);
@@ -139,8 +138,7 @@ impl Library {
 
         // Extract game archive.
         println!("    {}", style("Extracting game").magenta());
-        let mut games_path = PathBuf::from(&self.config.base_dir);
-        games_path.push("games");
+        let games_path = PathBuf::from(&self.config.games_dir);
         let mut game_path = PathBuf::from(&games_path);
         game_path.push(game_info.id.to_string());
         extract_archive(&temp_path, &game_path).await?;
