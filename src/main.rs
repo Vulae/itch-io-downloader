@@ -11,7 +11,7 @@ use download::{config::Config, download_and_execute, select_and_play};
 #[command(propagate_version = true)]
 struct Cli {
     #[command(subcommand)]
-    command: Commands,
+    command: Option<Commands>,
 }
 
 #[derive(Subcommand, Debug)]
@@ -51,14 +51,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let args = Cli::parse();
 
     match &args.command {
-        Commands::Play { game_id } => {
+        None => {
+            select_play().await?;
+            Ok(())
+        },
+        Some(Commands::Play { game_id }) => {
             match game_id {
                 Some(game_id) => play(game_id.clone()).await?,
                 None => select_play().await?,
             }
             Ok(())
         },
-        Commands::Uri { uri } => {
+        Some(Commands::Uri { uri }) => {
             match uri.split("/").filter(|s| !s.is_empty()).collect::<Vec<&str>>()[..] {
                 ["itch-io-downloader:", "play", game_id_str] => {
                     let game_id: i64 = game_id_str.parse()?;
