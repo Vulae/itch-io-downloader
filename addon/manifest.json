@@ -5,15 +5,7 @@
     "description": "Download & play Itch.io games",
     "version": "1.4.0",
 
-    "permissions": [
-        "scripting",
-        "tabs"
-    ],
-
-    "host_permissions": [
-        "https://itch.io/*",
-        "https://*.itch.io/*"
-    ],
+    "permissions": [],
 
     "content_scripts": [
         {
@@ -21,5 +13,4 @@
             "js": ["./script.js"]
         }
     ]
-   
 }
