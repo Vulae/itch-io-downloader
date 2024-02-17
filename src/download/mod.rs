@@ -10,6 +10,7 @@ mod game;
 mod library;
 mod api;
 mod downloader;
+mod error;
 
 
 

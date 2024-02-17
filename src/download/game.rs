@@ -3,7 +3,7 @@
 use std::{error::Error, fs::DirEntry, path::PathBuf};
 use serde::{Deserialize, Serialize};
 use tokio::{fs, process::Command};
-use super::{api::{itch_api_game_uploads, GameUpload}, config::Config};
+use super::{api::{itch_api_game_uploads, GameUpload}, config::Config, error::DownloadError};
 
 
 
@@ -62,7 +62,7 @@ impl Game {
             let (_, exec_path) = full_path.to_str().unwrap().split_at(4);
             let _program = Command::new(exec_path).spawn().unwrap();
         } else {
-            return Err("Failed to find executable.".into());
+            return Err(Box::new(DownloadError::GameNoExecutable));
         }
 
         Ok(())

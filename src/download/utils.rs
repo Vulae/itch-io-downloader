@@ -2,6 +2,8 @@
 use std::{path::PathBuf, error::Error};
 use tokio::{fs, process::Command};
 
+use super::error::DownloadError;
+
 
 
 pub async fn extract_archive(archive: &PathBuf, out_dir: &PathBuf) -> Result<(), Box<dyn Error>> {
@@ -16,7 +18,8 @@ pub async fn extract_archive(archive: &PathBuf, out_dir: &PathBuf) -> Result<(),
     if result.status.success() {
         Ok(())
     } else {
-        Err(String::from_utf8_lossy(&result.stderr).into())
+        let err_str = String::from_utf8_lossy(&result.stderr).to_string();
+        Err(Box::new(DownloadError::ExtractFailed(err_str)))
     }
 }
 

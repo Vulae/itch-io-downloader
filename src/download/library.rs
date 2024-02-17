@@ -1,31 +1,11 @@
 
-use core::fmt;
 use std::{error::Error, fmt::Write, path::PathBuf};
 use console::style;
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use serde::{Deserialize, Serialize};
 use tokio::{fs, io::AsyncWriteExt};
 use crate::download::{api::{itch_api_game_info, itch_api_game_uploads, itch_api_upload_download, GameUpload}, downloader::download, utils::extract_archive};
-use super::{config::Config, game::Game};
-
-
-
-#[derive(Debug, Clone)]
-enum LibraryError {
-    FailLoad,
-    GameIdMismatch
-}
-
-impl fmt::Display for LibraryError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            LibraryError::FailLoad => write!(f, "Library failed loading."),
-            LibraryError::GameIdMismatch => write!(f, "Game ID Mismatch."),
-        }
-    }
-}
-
-impl Error for LibraryError { }
+use super::{config::Config, error::DownloadError, game::Game};
 
 
 
@@ -57,7 +37,7 @@ impl Library {
                     let str = fs::read_to_string(&path).await?;
                     Ok(serde_json::from_str(&str)?)
                 } else {
-                    Err(Box::new(LibraryError::FailLoad))
+                    Err(Box::new(DownloadError::LibraryFailLoad))
                 }
             },
             Err(err) => {
@@ -100,12 +80,12 @@ impl Library {
 
 
     pub async fn download_game(&mut self, config: &Config, game_id: i64) -> Result<Option<&Game>, Box<dyn Error>> {
-        println!("    {}", style("Getting game info").magenta());
+        println!("{}", style("Getting game info").magenta());
 
         // Get game info.
         let game_info = itch_api_game_info(&config.api_key, &game_id).await?.game;
         if game_info.id != game_id {
-            return Err(Box::new(LibraryError::GameIdMismatch));
+            return Err(Box::new(DownloadError::LibraryGameIdMismatch));
         }
 
         // Get latest upload.
@@ -125,19 +105,19 @@ impl Library {
                 }
             })
             .collect::<Vec<&GameUpload>>().first().unwrap().to_owned();
-        println!("    {} {}", style("File to download").magenta(), style(&game_upload.filename).magenta().bold());
+        println!("{} {}", style("File to download").magenta(), style(&game_upload.filename).magenta().bold());
 
         // Upload link to download.
         let game_download = itch_api_upload_download(&config.api_key, &game_upload.id).await?;
 
         // Download game.
-        println!("    {}", style("Initializing download").magenta());
+        println!("{}", style("Initializing download").magenta());
         let mut temp_path = PathBuf::from(&config.games_dir);
         temp_path.push("temp");
         temp_path.push(&game_upload.filename);
 
         let progress_bar = ProgressBar::new(0);
-        progress_bar.set_style(ProgressStyle::with_template("    {msg:.magenta} {spinner:.cyan} [{elapsed_precise:.cyan}] [{bar:20.magenta/cyan}] {bytes:.cyan}/{total_bytes:.cyan} ({eta:.cyan})")
+        progress_bar.set_style(ProgressStyle::with_template("{msg:.magenta} {spinner:.cyan} [{elapsed_precise:.cyan}] [{bar:20.magenta/cyan}] {bytes:.cyan}/{total_bytes:.cyan} ({eta:.cyan})")
             .unwrap()
             .with_key("eta", |state: &ProgressState, w: &mut dyn Write| write!(w, "{:.1}s", state.eta().as_secs_f64()).unwrap())
             .progress_chars("#>-"));
@@ -149,14 +129,14 @@ impl Library {
         }).await?;
 
         // Extract game archive.
-        println!("    {}", style("Extracting game").magenta());
+        println!("{}", style("Extracting game").magenta());
         let games_path = PathBuf::from(&config.games_dir);
         let mut game_path = PathBuf::from(&games_path);
         game_path.push(game_info.id.to_string());
         extract_archive(&temp_path, &game_path).await?;
 
         // Cleanup temp
-        println!("    {}", style("Finishing installation").magenta());
+        println!("{}", style("Finishing installation").magenta());
         fs::remove_file(&temp_path).await?;
 
         // Add game to self
