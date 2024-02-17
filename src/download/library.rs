@@ -1,12 +1,31 @@
 
+use core::fmt;
 use std::{error::Error, fmt::Write, path::PathBuf};
 use console::style;
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use serde::{Deserialize, Serialize};
 use tokio::{fs, io::AsyncWriteExt};
 use crate::download::{api::{itch_api_game_info, itch_api_game_uploads, itch_api_upload_download, GameUpload}, downloader::download, utils::extract_archive};
-
 use super::{config::Config, game::Game};
+
+
+
+#[derive(Debug, Clone)]
+enum LibraryError {
+    FailLoad,
+    GameIdMismatch
+}
+
+impl fmt::Display for LibraryError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            LibraryError::FailLoad => write!(f, "Library failed loading."),
+            LibraryError::GameIdMismatch => write!(f, "Game ID Mismatch."),
+        }
+    }
+}
+
+impl Error for LibraryError { }
 
 
 
@@ -31,8 +50,24 @@ impl Library {
 
     pub async fn load(config: &Config) -> Result<Library, Box<dyn Error>> {
         let path = Self::get_library_json_file(config).await?;
-        let str = fs::read_to_string(path).await?;
-        Ok(serde_json::from_str(&str)?)
+        
+        match fs::metadata(&path).await {
+            Ok(meta) => {
+                if meta.is_file() {
+                    let str = fs::read_to_string(&path).await?;
+                    Ok(serde_json::from_str(&str)?)
+                } else {
+                    Err(Box::new(LibraryError::FailLoad))
+                }
+            },
+            Err(err) => {
+                if err.kind() != tokio::io::ErrorKind::NotFound {
+                    Err(Box::new(err))
+                } else {
+                    Ok(Self { games: Vec::new() })
+                }
+            }
+        }
     }
 
     pub async fn save(&mut self, config: &Config) -> Result<(), Box<dyn Error>> {
@@ -70,7 +105,7 @@ impl Library {
         // Get game info.
         let game_info = itch_api_game_info(&config.api_key, &game_id).await?.game;
         if game_info.id != game_id {
-            return Err("Game id does not match.".into());
+            return Err(Box::new(LibraryError::GameIdMismatch));
         }
 
         // Get latest upload.
@@ -139,27 +174,6 @@ impl Library {
 
         Ok(self.get_game(config, &game_id))
     }
-
-    // pub async fn delete_game(&mut self, game_id: i64) -> Result<(), Box<dyn Error>> {
-
-    //     let game = self.get_game(&game_id);
-    //     if game.is_none() {
-    //         return Ok(());
-    //     }
-    //     let game = game.unwrap();
-
-    //     println!("    {}", style("Deleting game").magenta());
-    //     let mut game_path = PathBuf::from(&game.config.base_dir);
-    //     game_path.push("games");
-    //     game_path.push(&game.directory);
-
-    //     fs::remove_dir_all(game_path).await?;
-
-    //     self.remove_game(game);
-    //     self.save().await?;
-
-    //     Ok(())
-    // }
 
 }
 
