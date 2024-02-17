@@ -49,27 +49,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let args = Cli::parse();
 
     match &args.command {
-        None => {
-            select_play().await?;
-        },
+        None => select_play().await?,
+
         Some(Commands::Play { game_id }) => {
             match game_id {
                 Some(game_id) => play(game_id.clone()).await?,
                 None => select_play().await?,
             }
         },
+
         Some(Commands::Uri { uri }) => {
             match uri.split("/").filter(|s| !s.is_empty()).collect::<Vec<&str>>()[..] {
-                ["itch-io-downloader:", "play", game_id_str] => {
-                    let game_id: i64 = game_id_str.parse()?;
-                    play(game_id).await?;
-                },
-                ["itch-io-downloader:", "play"] => {
-                    select_play().await?;
-                },
-                _ => {
-                    panic!("Invalid URI.");
-                },
+                ["itch-io-downloader:", "play", id] => play(id.parse()?).await?,
+                ["itch-io-downloader:", "play"] => select_play().await?,
+                _ => panic!("Invalid URI."),
             }
         }
     };
