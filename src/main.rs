@@ -16,8 +16,6 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
-    /// Select a game to play
-    SelectPlay { },
     /// Play a game
     Play {
         #[arg(index = 1)]
@@ -33,12 +31,12 @@ enum Commands {
 
 
 async fn play(game_id: i64) -> Result<(), Box<dyn Error>> {
-    download_and_execute(Config::load().await?, game_id).await?;
+    download_and_execute(&Config::load().await?, game_id).await?;
     Ok(())
 }
 
 async fn select_play() -> Result<(), Box<dyn Error>> {
-    select_and_play(Config::load().await?).await?;
+    select_and_play(&Config::load().await?).await?;
     Ok(())
 }
 
@@ -53,14 +51,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     match &args.command {
         None => {
             select_play().await?;
-            Ok(())
         },
         Some(Commands::Play { game_id }) => {
             match game_id {
                 Some(game_id) => play(game_id.clone()).await?,
                 None => select_play().await?,
             }
-            Ok(())
         },
         Some(Commands::Uri { uri }) => {
             match uri.split("/").filter(|s| !s.is_empty()).collect::<Vec<&str>>()[..] {
@@ -75,10 +71,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     panic!("Invalid URI.");
                 },
             }
-            Ok(())
-        },
-        _ => panic!("Invalid arguments."),
-    }
+        }
+    };
+
+    Ok(())
 }
 
 

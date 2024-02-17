@@ -7,21 +7,8 @@ use super::{api::{itch_api_game_uploads, GameUpload}, config::Config};
 
 
 
-#[derive(Deserialize, Serialize)]
-pub struct GameJson {
-    pub game_id: i64,
-    pub upload_id: i64,
-    pub title: String,
-    pub description: String,
-    pub url: String,
-    pub directory: String,
-}
-
-
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Game {
-    pub config: Config,
     pub game_id: i64,
     pub upload_id: i64,
     pub title: String,
@@ -34,33 +21,8 @@ pub struct Game {
 
 impl Game {
 
-    pub fn new(config: Config, game_json: &GameJson) -> Self {
-        Self {
-            config,
-            game_id: game_json.game_id,
-            upload_id: game_json.upload_id,
-            title: game_json.title.clone(),
-            description: game_json.description.clone(),
-            url: game_json.url.clone(),
-            directory: game_json.directory.clone()
-        }
-    }
-
-    pub fn json(&mut self) -> GameJson {
-        GameJson {
-            game_id: self.game_id,
-            upload_id: self.upload_id,
-            title: self.title.clone(),
-            description: self.description.clone(),
-            url: self.url.clone(),
-            directory: self.directory.clone(),
-        }
-    }
-
-
-
-    pub async fn is_downloaded(&mut self) -> Result<bool, Box<dyn Error>> {
-        let mut game_path = PathBuf::from(&self.config.games_dir);
+    pub async fn is_downloaded(&mut self, config: &Config) -> Result<bool, Box<dyn Error>> {
+        let mut game_path = PathBuf::from(&config.games_dir);
         game_path.push(&self.directory);
 
         if !fs::try_exists(&game_path).await? {
@@ -72,12 +34,12 @@ impl Game {
         Ok(meta.is_dir())
     }
 
-    pub async fn is_latest(&mut self) -> Result<bool, Box<dyn Error>> {
-        if !self.is_downloaded().await? {
+    pub async fn is_latest(&mut self, config: &Config) -> Result<bool, Box<dyn Error>> {
+        if !self.is_downloaded(config).await? {
             return Ok(false);
         }
 
-        let mut game_uploads = itch_api_game_uploads(&self.config.api_key, &self.game_id).await?.uploads;
+        let mut game_uploads = itch_api_game_uploads(&config.api_key, &self.game_id).await?.uploads;
         game_uploads.sort_by(|a, b| {
             a.id.cmp(&b.id)
         });
@@ -88,9 +50,9 @@ impl Game {
         Ok(game_upload.id <= self.upload_id)
     }
 
-    pub async fn start(&mut self) -> Result<(), Box<dyn Error>> {
+    pub async fn start(&mut self, config: &Config) -> Result<(), Box<dyn Error>> {
 
-        let mut search_path = PathBuf::from(&self.config.games_dir);
+        let mut search_path = PathBuf::from(&config.games_dir);
         search_path.push(&self.directory);
         let executable_path = find_executable(search_path)?;
 
