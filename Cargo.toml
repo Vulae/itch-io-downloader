@@ -3,7 +3,7 @@ name = "itch-io-downloader"
 description = "Download & play Itch.io games from the browser"
 repository = "https://github.com/Vulae/itch-io-downloader"
 license = "MIT"
-version = "1.4.0"
+version = "1.5.0"
 edition = "2021"
 publish = false
 
