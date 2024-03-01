@@ -97,7 +97,7 @@ pub struct GameUploadBuild {
     pub created_at: String,
     pub updated_at: String,
 
-    pub user_version: String,
+    pub user_version: Option<String>,
 }
 
 pub async fn itch_api_game_uploads(api_key: &str, game_id: &i64) -> Result<GameUploads, Box<dyn Error>> {
